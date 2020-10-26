@@ -9,28 +9,30 @@ namespace Raffly
     {
         public static ExcelFileParticipantReader CreateParticipantLoader(IConfiguration configurationRoot)
         {
-            var data = configurationRoot.GetSection("ParticipantsData").Get<Dictionary<string,string>>();
-            data.TryGetValue("Type", out var sourceType);
+            var dataSettings = configurationRoot.GetSection("ParticipantsData");
+            var sourceType = dataSettings.GetSection("Type").Get<string>();
             return sourceType switch
             {
-                "ExcelFileParticipantReader" => CreateExcelFileParticipantReader(data["Source"]),
+                "ExcelFileParticipantReader" => CreateExcelFileParticipantReader(dataSettings.GetSection("Settings")),
                 _ => throw new ArgumentOutOfRangeException(nameof(sourceType), $"Unknown participant loader: {sourceType}")
             };
         }
 
-        private static ExcelFileParticipantReader CreateExcelFileParticipantReader(string path)
+        private static ExcelFileParticipantReader CreateExcelFileParticipantReader(IConfigurationSection config)
         {
-            if (string.IsNullOrWhiteSpace(path))
+            var readerSettings = config.Get<ExcelFileParticipantReaderSettings>();
+
+            if (string.IsNullOrWhiteSpace(readerSettings.Source))
             {
                 throw new InvalidOperationException("File with participant data not defined");
             }
 
-            if (File.Exists(path) == false)
+            if (File.Exists(readerSettings.Source) == false)
             {
-                throw new FileNotFoundException("File with participants data doesn't exist", path);
+                throw new FileNotFoundException("File with participants data doesn't exist", readerSettings.Source);
             }
 
-            return new ExcelFileParticipantReader(path);
+            return new ExcelFileParticipantReader(readerSettings);
         }
     }
 }

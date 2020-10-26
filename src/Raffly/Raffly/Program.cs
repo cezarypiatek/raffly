@@ -14,6 +14,9 @@ namespace Raffly
             var participantLoader = ParticipantLoaderFactory.CreateParticipantLoader(configuration);
             var prizes = LoadPrizes(configuration);
             var participants = participantLoader.Load();
+
+            ShowIntro(prizes, participants);
+
             var announcer = CreateAnnouncer();
             var raffleEngine = CreateRaffleEngine();
             Console.WriteLine("Press key to start the raffle....");
@@ -21,6 +24,24 @@ namespace Raffly
             var winners = raffleEngine.Draw(prizes, participants);
             announcer.Announce(winners);
             Console.WriteLine("Congratulations!");
+        }
+
+        private static void ShowIntro(IReadOnlyList<Prize> prizes, IReadOnlyList<Participant> participants)
+        {
+            Console.WriteLine("Prizes:");
+            foreach (var prize in prizes.GroupBy(x=>x.Name))
+            {
+                Console.WriteLine($"\t{prize.Key} x{prize.Count()}");
+            }
+
+            Console.WriteLine("----------------------------------");
+
+            Console.WriteLine("Participants:");
+            foreach (var (participant, index) in participants.Select((p,i)=>(p,i+1)))
+            {
+                Console.WriteLine($"\t#{index} {participant}");
+            }
+            Console.WriteLine("----------------------------------");
         }
 
         private static RaffleEngine CreateRaffleEngine()
