@@ -10,7 +10,8 @@ namespace Raffly
     public class ExcelFileParticipantReaderSettings
     {
         public string Source { get; set; }
-        public Dictionary<string,int> FieldMapping { get; set; }
+        public string ImposePrizes { get; set; }
+        public Dictionary<string,string> FieldMapping { get; set; }
     }
 
     class ExcelFileParticipantReader : IParticipantReader
@@ -48,9 +49,9 @@ namespace Raffly
         {
             for (int i = table.Range.Start.Row +1; i <= table.Range.End.Row; i++)
             {
-                var moniker = table.WorkSheet.Cells[i, _settings.FieldMapping[FieldNames.Moniker]].GetValue<string>()?.Trim();
-                var email = table.WorkSheet.Cells[i, _settings.FieldMapping[FieldNames.Email]].GetValue<string>()?.Trim();
-                var prizes = table.WorkSheet.Cells[i, _settings.FieldMapping[FieldNames.Prizes]].GetValue<string>()?.Split(";") ?? Array.Empty<string>();
+                var moniker = TryGetMonikerForRow(table, i);
+                var email = TryGetEmailForRow(table, i);
+                var prizes = TryGetPrizesForRow(table, i);
                 if (string.IsNullOrWhiteSpace(moniker) == false && string.IsNullOrWhiteSpace(email) == false && prizes.Length > 0)
                 {
                     yield return new Participant
@@ -67,6 +68,26 @@ namespace Raffly
                     };
                 }
             }
+        }
+
+        private string[] TryGetPrizesForRow(ExcelTable table, int i)
+        {
+            var prizesString = string.IsNullOrWhiteSpace(_settings.ImposePrizes) ?
+                table.WorkSheet.Cells[$"{_settings.FieldMapping[FieldNames.Prizes]}{i}"].GetValue<string>()
+                : _settings.ImposePrizes;
+            return prizesString?.Split(";") ?? Array.Empty<string>();
+        }
+
+        private string TryGetEmailForRow(ExcelTable table, int i)
+        {
+            return table.WorkSheet.Cells[$"{_settings.FieldMapping[FieldNames.Email]}{i}"].GetValue<string>()?.Trim();
+        }
+
+        private string TryGetMonikerForRow(ExcelTable table, int i)
+        {
+
+            var address = $"{_settings.FieldMapping[FieldNames.Moniker]}{i}";
+            return table.WorkSheet.Cells[address].GetValue<string>()?.Trim();
         }
     }
 }
